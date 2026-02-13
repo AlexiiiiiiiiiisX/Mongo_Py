@@ -1,37 +1,32 @@
 import { MongoClient, type Db } from "mongodb";
 
-if (!process.env.MONGODB_URI) {
-  throw new Error(
-    "Please define the MONGODB_URI environment variable inside .env.local or your Vercel project settings."
-  );
-}
-
-const uri = process.env.MONGODB_URI;
-const options = {};
-
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-// In development mode, use a global variable so the value
-// is preserved across module reloads caused by HMR.
 const globalWithMongo = global as typeof globalThis & {
   _mongoClientPromise?: Promise<MongoClient>;
 };
 
-if (process.env.NODE_ENV === "development") {
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
+function getClientPromise(): Promise<MongoClient> {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error(
+      "Please define the MONGODB_URI environment variable inside .env.local or your Vercel project settings."
+    );
   }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+
+  if (process.env.NODE_ENV === "development") {
+    // In development, use a global variable so the value
+    // is preserved across module reloads caused by HMR.
+    if (!globalWithMongo._mongoClientPromise) {
+      const client = new MongoClient(uri);
+      globalWithMongo._mongoClientPromise = client.connect();
+    }
+    return globalWithMongo._mongoClientPromise;
+  }
+
+  const client = new MongoClient(uri);
+  return client.connect();
 }
 
-export default clientPromise;
-
 export async function getDatabase(): Promise<Db> {
-  const client = await clientPromise;
+  const client = await getClientPromise();
   return client.db("crud_app");
 }
