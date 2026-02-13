@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getDatabase } from "@/lib/mongodb";
 import { createUserSchema } from "@/lib/validations";
-import bcrypt from "bcryptjs";
+
+export const dynamic = "force-dynamic";
 
 // GET /api/users - List all users
 export async function GET() {
   try {
+    const { getDatabase } = await import("@/lib/mongodb");
     const db = await getDatabase();
     const users = await db
       .collection("users")
@@ -45,6 +46,8 @@ export async function POST(request: Request) {
 
     const { name, email, password } = parsed.data;
 
+    const { getDatabase } = await import("@/lib/mongodb");
+    const bcrypt = (await import("bcryptjs")).default;
     const db = await getDatabase();
 
     // Check for duplicate email

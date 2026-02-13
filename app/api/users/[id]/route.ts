@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { getDatabase } from "@/lib/mongodb";
 import { updateUserSchema } from "@/lib/validations";
-import { ObjectId } from "mongodb";
-import bcrypt from "bcryptjs";
+
+export const dynamic = "force-dynamic";
 
 function isValidObjectId(id: string): boolean {
   return /^[a-f\d]{24}$/i.test(id);
@@ -23,6 +22,8 @@ export async function GET(
       );
     }
 
+    const { ObjectId } = await import("mongodb");
+    const { getDatabase } = await import("@/lib/mongodb");
     const db = await getDatabase();
     const user = await db
       .collection("users")
@@ -83,6 +84,7 @@ export async function PUT(
     if (parsed.data.email) updateData.email = parsed.data.email;
 
     if (parsed.data.password) {
+      const bcrypt = (await import("bcryptjs")).default;
       const salt = await bcrypt.genSalt(12);
       updateData.password = await bcrypt.hash(parsed.data.password, salt);
     }
@@ -96,6 +98,8 @@ export async function PUT(
 
     updateData.updatedAt = new Date();
 
+    const { ObjectId } = await import("mongodb");
+    const { getDatabase } = await import("@/lib/mongodb");
     const db = await getDatabase();
 
     // Check duplicate email if email is being updated
@@ -155,6 +159,8 @@ export async function DELETE(
       );
     }
 
+    const { ObjectId } = await import("mongodb");
+    const { getDatabase } = await import("@/lib/mongodb");
     const db = await getDatabase();
     const result = await db
       .collection("users")
